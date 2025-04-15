@@ -4,9 +4,9 @@ on:
     branches:
       - docker
 env:
-  AWS_REGION: ${{ vars.REGION }}
-  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPO }}
   EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
 
 jobs:
   BuildandPush:
@@ -21,7 +21,7 @@ jobs:
           access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           registry: ${{ secrets.REGISTRY }}
-          repo: ${{ env.ECR_REPOSITORY }}
+          repo: ${{ env.ECR_REPO }}
           region: ${{ env.AWS_REGION }}
           tags: ${{ github.run_number }}
           daemon_off: false
