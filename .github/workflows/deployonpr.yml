@@ -25,7 +25,7 @@ jobs:
           region: ${{ env.AWS_REGION }}
           tags: ${{ github.run_number }}
           daemon_off: false
-          dockerfile: ../app/Dockerfile
+          dockerfile: ../Dockerfile
           context: ../app
   DeployToEKS:
     needs: BuildandPush
