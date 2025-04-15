@@ -70,8 +70,6 @@ jobs:
 
       - name: Show SVC
         run: kubectl get svc
-
-      ##
 # name: deploy-on-pr
 
 # on:
