@@ -8,7 +8,7 @@ on:
       - iac-gitops
     paths:
       - terraform/**
-  workflow_dispatch: # Enables manual trigger for destroy  job
+  workflow_dispatch: # Enables manual trigger for destroy job
 
 # Environment Variables
 env:
@@ -79,7 +79,7 @@ jobs:
     name: 'Destroy Infra on AWS'
     runs-on: ubuntu-latest
     # Only trigger for workflow_dispatch
-    # if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'
 
     defaults:
       run:
