@@ -1,11 +1,11 @@
 # Workflow Name
-name: 'infrastructure-gitops'
+name: 'infra-gitops'
 
 # Workflow Triggers
 on:
   push:
     branches:
-      - iac-gitops
+      - infrastructure-gitops
     paths:
       - terraform/**
   workflow_dispatch: # Enables manual trigger for destroy job
