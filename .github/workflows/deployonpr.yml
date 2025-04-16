@@ -1,37 +1,21 @@
 name: docker-actions
+
 on:
   push:
     branches:
       - docker
+
 env:
-  ECR_REPOSITORY: ${{ vars.ECR_REPO }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
   EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
   AWS_REGION: ${{ vars.AWS_REGION }}
 
 jobs:
-  BuildandPush:
+  BuildAndPush:
     runs-on: ubuntu-latest
-    steps:
-      - name: Code checkout
-        uses: actions/checkout@v4
 
-      - name: Build & Upload image to ECR
-        uses: appleboy/docker-ecr-action@master
-        with:
-          access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          registry: ${{ secrets.REGISTRY }}
-          repo: ${{ env.ECR_REPO }}
-          region: ${{ env.AWS_REGION }}
-          tags: ${{ github.run_number }}
-          daemon_off: false
-          dockerfile: ./Dockerfile
-          context: ./
-  DeployToEKS:
-    needs: BuildandPush
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
@@ -41,11 +25,37 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get Kubernetes config
-        id: getconfig
-        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Login to ECR
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }} .
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }}
+
+  DeployToEKS:
+    needs: BuildAndPush
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
+
+      - name: Create ECR secret (if not exists)
         run: |
           kubectl get secret regcred || \
           kubectl create secret docker-registry regcred \
@@ -53,20 +63,19 @@ jobs:
             --docker-username=AWS \
             --docker-password=$(aws ecr get-login-password)
 
-      - name: Deploy with Helm
-        uses: bitovi/github-actions-deploy-eks-helm@v1.2.12
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          cluster-name: ${{ env.EKS_CLUSTER }}
-          chart-path: helm/appcharts
-          namespace: default
-          values: appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.run_number }}
-          name: webapp-stack
+      - name: Update Helm dependencies (if any)
+        run: |
+          helm dependency update helm/appcharts || echo "No dependencies"
 
-      - name: Show Pods
-        run: kubectl get pod -A
+      - name: Deploy to EKS using Helm
+        run: |
+          helm upgrade --install webapp-stack helm/appcharts \
+            --namespace default \
+            --create-namespace \
+            --set appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.run_number }}
 
-      - name: Show SVC
-        run: kubectl get svc
+      - name: Get all pods
+        run: kubectl get pods -A
+
+      - name: Get all services
+        run: kubectl get svc -A
