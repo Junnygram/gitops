@@ -30,11 +30,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }} .
+          docker build -t ${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }}
+          docker push ${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
   DeployToEKS:
     needs: BuildAndPush
@@ -72,7 +72,7 @@ jobs:
           helm upgrade --install webapp-stack helm/appcharts \
             --namespace default \
             --create-namespace \
-            --set appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.run_number }}
+            --set appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.sha }}
 
       - name: Get all pods
         run: kubectl get pods -A
