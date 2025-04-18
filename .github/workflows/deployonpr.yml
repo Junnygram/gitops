@@ -1,8 +1,8 @@
-name: deploy-actions
+name: deploy-app-actions
 on:
   push:
     branches:
-      - docker
+      - main
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ vars.ECR_REPO }}
@@ -25,8 +25,8 @@ jobs:
           region: ${{ env.REGION  }}
           tags: ${{ github.run_number }}
           daemon_off: false
-          dockerfile: ./Dockerfile
-          context: ./
+          dockerfile: ../app/Dockerfile
+          context: ../app
   DeployToEKS:
     needs: BuildandPush
     runs-on: ubuntu-latest
