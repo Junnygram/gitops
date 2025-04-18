@@ -2,7 +2,7 @@ name: deploy-app-actions
 on:
   push:
     branches:
-      - docker
+      - main
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ vars.ECR_REPO }}
