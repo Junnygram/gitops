@@ -1,6 +1,6 @@
 namespace: prod
 configmap:
   data:
-    env: 'checking from prod'
+    env: 'checking_production'
 ingress:
   enabled: true

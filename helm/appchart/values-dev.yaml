@@ -1,6 +1,6 @@
 namespace: dev
 configmap:
   data:
-    env: 'checking from dev'
+    env: 'checking_development'
 ingress:
   enabled: true

@@ -4,4 +4,4 @@ metadata:
   name: myconfigmapv1.0
   namespace: { { .Release.Namespace } }
 data:
-  NEXT_PUBLIC_ENV: { { .Values.environment | quote } }
+  NEXT_PUBLIC_ENV: '{{ .Values.environment | quote }}'
