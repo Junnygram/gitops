@@ -1,0 +1,6 @@
+namespace: dev
+configmap:
+  data:
+    env: 'checking from dev'
+ingress:
+  enabled: true

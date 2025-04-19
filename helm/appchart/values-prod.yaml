@@ -1,0 +1,6 @@
+namespace: prod
+configmap:
+  data:
+    env: 'checking from prod'
+ingress:
+  enabled: true

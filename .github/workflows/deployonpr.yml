@@ -1,8 +1,10 @@
 name: deploy-app-actions
+
 on:
   push:
     branches:
       - main
+
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ vars.ECR_REPO }}
@@ -22,11 +24,12 @@ jobs:
           secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           registry: ${{ secrets.REGISTRY }}
           repo: ${{ env.ECR_REPOSITORY }}
-          region: ${{ env.REGION  }}
+          region: ${{ env.AWS_REGION }}
           tags: ${{ github.run_number }}
           daemon_off: false
           dockerfile: ./app/Dockerfile
           context: ./app
+
   DeployToEKS:
     needs: BuildandPush
     runs-on: ubuntu-latest
@@ -42,10 +45,9 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Get Kubernetes config
-        id: getconfig
         run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
 
-      - name: Login to ECR
+      - name: Login to ECR (for pulling in cluster)
         run: |
           kubectl get secret regcred || \
           kubectl create secret docker-registry regcred \
@@ -53,7 +55,7 @@ jobs:
             --docker-username=AWS \
             --docker-password=$(aws ecr get-login-password)
 
-      - name: Deploy with Helm
+      - name: Deploy to Dev
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.12
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -61,12 +63,26 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           cluster-name: ${{ env.EKS_CLUSTER }}
           chart-path: helm/appchart
-          namespace: default
+          namespace: dev
+          name: webapp-dev
           values: appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.run_number }}
-          name: webapp-stack
+          value-files: helm/appchart/values-dev.yaml
 
-      - name: Show Pods
-        run: kubectl get pod -A
+      - name: Deploy to Prod
+        uses: bitovi/github-actions-deploy-eks-helm@v1.2.12
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          cluster-name: ${{ env.EKS_CLUSTER }}
+          chart-path: helm/appchart
+          namespace: prod
+          name: webapp-prod
+          values: appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.run_number }}
+          value-files: helm/appchart/values-prod.yaml
 
-      - name: Show SVC
-        run: kubectl get svc
+      - name: Show All Pods
+        run: kubectl get pods -A
+
+      - name: Show All Services
+        run: kubectl get svc -A
