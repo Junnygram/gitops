@@ -47,6 +47,12 @@ jobs:
       - name: Get Kubernetes config
         run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
 
+      - name: Install Nginx Ingress Controller
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.type=LoadBalancer
+
       - name: Login to ECR (for pulling in cluster)
         run: |
           kubectl get secret regcred || \
@@ -86,3 +92,6 @@ jobs:
 
       - name: Show All Services
         run: kubectl get svc -A
+
+      - name: Show Ingress Details
+        run: kubectl get ingress -A
