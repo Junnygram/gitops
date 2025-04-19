@@ -66,7 +66,7 @@ jobs:
           namespace: dev
           name: webapp-dev
           values: appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.run_number }}
-          config-files: ./helm/appchart/config-dev.yaml
+          config-files: ./helm/appchart/values-dev.yaml
 
       - name: Deploy to Prod
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.12
@@ -79,7 +79,7 @@ jobs:
           namespace: prod
           name: webapp-prod
           values: appimage=${{ secrets.REGISTRY }}/${{ env.ECR_REPOSITORY }},apptag=${{ github.run_number }}
-          config-files: ./helm/appchart/config-prod.yaml
+          config-files: ./helm/appchart/values-prod.yaml
 
       - name: Show All Pods
         run: kubectl get pods -A
