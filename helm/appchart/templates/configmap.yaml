@@ -4,4 +4,4 @@ kind: ConfigMap
 metadata:
   name: nextjs-config
 data:
-  NEXT_PUBLIC_ENV: { { .Values.environment | quote } }
+  NEXT_PUBLIC_ENV: "{{ .Values.environment }}""
